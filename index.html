@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload Form</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="container">
+      <h3 id="status">Save files to Drive</h3>
+      <p id="limit">File size limit: 35Mb</p>
+      <p id="loading">Fetching...</p>
+      <input type="file" id="fileInput" name="file" class="fileInput" multiple>
+      <input type="password" id="keyBox" name="key" maxlength="18" placeholder="  Type your key..." autocomplete="off">
+      <input type="submit" id="button" value="Save">
+  </div>
+</body>
+<script>
+//Global variables
+let fileInput = document.getElementById("fileInput");
+const key = document.getElementById("keyBox");
+const button = document.getElementById("button");
+
+//Function trigger
+button.addEventListener("click", async function(event) {
+  event.preventDefault();
+  let files = fileInput.files;
+  
+  //Condition before submition
+  if (!files || files.length <= 0 || !key.value) {
+    return document.getElementById("status").textContent = "Enter a valid file and key!";
+  };
+  let totalSize = 0;
+  for (let i = 0; i < files.length;i++){
+    totalSize += files[i].size;
+  };
+  if (totalSize > 35 * 1024 * 1024){
+    return document.getElementById("status").textContent = "File size exceeded!";
+  };
+  document.getElementById("loading").style.visibility = "visible";
+  button.disabled = true;
+//Error handler
+ try {
+   
+    //File to base64 string encoder
+    const readFileAsBase64 = (file) => {
+      return new Promise((resolve, reject) => {
+        let reader = new FileReader();
+        reader.onloadend = function () {
+          let b64Files = reader.result.split(',')[1];
+          resolve(b64Files);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    };
+    
+    //Packing necessary data
+    let formData = new FormData();
+    formData.append('key', key.value.trim());
+    for (let i = 0; i < files.length;i++){
+      let fileName = files[i].name;
+      let b64File = await readFileAsBase64(files[i]);
+      formData.append('file',b64File);
+      formData.append('name',fileName);
+    };
+    
+    //Delivers data to server destination
+    let response = await fetch('https://script.google.com/macros/s/AKfycbzv3pKmjCScdTDiyHIKH-NJgH9sFy-1JCky2r-pd5iPbkZGdXIbobiafZRGyjlX7iyP/exec', { method: "POST", body: formData });
+    
+    //Server reply
+    let responseText = await response.text()
+    document.getElementById("status").textContent = responseText;
+
+    //User interface response
+    document.getElementById("loading").style.visibility = "hidden";
+    button.disabled = false;
+    if (responseText.slice(0, 5) === "Files") {
+      fileInput.value="";
+      key.style.backgroundColor = "rgb(66,241,43)";
+      setTimeout(() => {
+      key.style.backgroundColor = "white";
+      }, 1000);
+    }else{
+      key.style.backgroundColor = "red";
+      setTimeout(() => {
+      key.style.backgroundColor ="white";
+      }, 1000);
+    };
+    
+  //Error catcher 
+  } catch (err) {
+    document.getElementById("status").textContent = "ClientError: " + err.message;
+  };
+});
+</script>
+  </html>
