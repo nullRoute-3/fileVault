@@ -1,3 +1,5 @@
+Beginner Project :>
+
 # Secure File Uploader
 
 A simple web-based file uploader that allows you to securely save small files to your Google Drive without needing to sign in with your actual google account on stranger's pc / public computers. The app is designed with a **server-side secret key** to protect your uploads.
